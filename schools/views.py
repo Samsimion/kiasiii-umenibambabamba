@@ -1,50 +1,32 @@
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
-from .models import PrimarySchool,HighSchool,SchoolCategory
-# Create your views here.
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import PrimarySchool, HighSchool
+from .serializers import PrimarySchoolSerializer, HighSchoolSerializer
 
-def register_primary_school(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-
-        try:
-            category = SchoolCategory.objects.get(id = data['category'])
-            school = PrimarySchool.objects.create(
-                name = data['name'],
-                category = category,
-                school_type = data['school_type'],
-                address = = data['address'],
-                email = data['email'],
-                phone = data[phone],
-                is_approved = data.get('is_approved', False)
-
-            )
-            return JsonResponse({'message': 'Primary School registered successfully!'}, status = 201)
-        
-        except SchoolCategory.DoesNotExist:
-            return JsonResponse({'error': 'Invalid Category'}, status = 400)
+@api_view(['GET', 'POST'])
+def primary_schools(request):
+    if request.method == 'GET':
+        schools = PrimarySchool.objects.all()
+        serializer = PrimarySchoolSerializer(schools, many=True)  # Fix: many=True not 'True'
+        return Response(serializer.data)
     
-    return JsonResponse({'error': 'Invalid request method'}, status = 405)             
+    elif request.method == 'POST':
+        serializer = PrimarySchoolSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Primary School registered successfully!'}, status=201)
+        return Response(serializer.errors, status=400)  # Fix: serializer.errors not error
 
-@csrf_exempt
-def register_high_school(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-
-        try:
-            category = SchoolCategory.objects.get(id =data['category'])
-            school = HighSchool.objects.create(
-                name = data['name'],
-                category = category,
-                school_type =data['school_type'],
-                address = data['address'],
-                email = data['email'],
-                phone = data['phone'],
-                is_approved = data.get('is_approved', False),
-            )
-            return JsonResponse({'message':'High School registered successfully!'}, status=201)
-        except SchoolCategory.DoesNotExist:
-             return JsonResponse({'error': 'Invalid category'}, status=400)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+@api_view(['GET', 'POST'])
+def high_schools(request):  # Fix: better to name it high_schools for consistency
+    if request.method == 'GET':
+        schools = HighSchool.objects.all()
+        serializer = HighSchoolSerializer(schools, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = HighSchoolSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'High School registered successfully!'}, status=201)
+        return Response(serializer.errors, status=400)
